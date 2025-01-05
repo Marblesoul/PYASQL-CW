@@ -1,0 +1,6 @@
+TELEGRAM_TOKEN = 'ENTER_YOUR_TOKEN'
+DB_NAME = 'Enter_your_db_name'
+DB_USER = 'Enter_your_db_user'
+DB_PASSWORD = 'Enter_your_db_password'
+DB_HOST = 'Enter_your_db_host'
+DB_PORT = 'Enter_your_db_port'
