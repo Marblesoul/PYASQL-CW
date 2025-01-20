@@ -12,12 +12,11 @@ class User(Base):
     __tablename__ = "users"
 
     id = sq.Column(sq.Integer, primary_key=True, index=True)
-    user_id = sq.Column(sq.Integer, unique=True)
 
     user_words = relationship("UserWord", back_populates="user")
 
     def __repr__(self):
-        return f"User(id={self.id}, user_id={self.user_id})"
+        return f"User(id={self.id})"
 
 class Word(Base):
     __tablename__ = "words"
@@ -41,5 +40,9 @@ class UserWord(Base):
     word = relationship("Word", back_populates="user_words")
 
     def __repr__(self):
-        return f"UserWord(id={self.id}, user_id={self.user_id}, word_id={self.word_id})"
+        return f"UserWord(id={self.id}, word_id={self.word_id})"
 
+
+def create_db_and_tables():
+    print('Creating database...')
+    Base.metadata.create_all(bind=engine)
