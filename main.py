@@ -4,7 +4,7 @@ from telebot import types, TeleBot, custom_filters
 from telebot.storage import StateMemoryStorage
 from telebot.handler_backends import State, StatesGroup
 from db.create_db import create_db_and_tables
-from db.function_db import check_user, check_user_dict, add_word, get_words_from_db, delete_word_from_db
+from db.function_db import check_user, add_word, get_words_from_db, delete_word_from_db
 from config import TELEGRAM_TOKEN
 
 
@@ -70,6 +70,7 @@ def cmd_start(message):
     else:
         bot.send_message(cid,
                          "Привет 👋 Давай попрактикуемся в английском языке. Тренировки можешь проходить в удобном для себя темпе. \n\n У тебя есть возможность использовать тренажёр, как конструктор, и собирать свою собственную базу для обучения. Для этого воспрользуйся инструментами: \n\n добавить слово ➕,\nудалить слово 🔙.\n\nНу что, начнём ⬇️")
+        add_word_to_db(message, base_words=[basic_words[word] for word in basic_words])
         create_cards(message)
 
 @bot.message_handler(commands=['cards'])
@@ -132,26 +133,35 @@ def next_cards(message):
 
 @bot.message_handler(func=lambda message: message.text == Command.DELETE_WORD)
 def delete_word(message):
-    with bot.retrieve_data(message.from_user.id, message.chat.id) as data:
-        print(data)
-        result = delete_word_from_db(message.from_user.id, data['target_word'])
-        bot.reply_to(message, result)
+    user_id = message.from_user.id
+    msg = bot.send_message(
+        message.chat.id,
+        "Введите слово на русском языке для удаления из словаря:")
+    bot.register_next_step_handler(msg, delete_word_from_db)
+    # result = delete_word_from_db(message.from_user.id, data['target_word'])
+    # bot.reply_to(message, result)
 
 
 @bot.message_handler(func=lambda message: userStep.get(message.chat.id, 0) == 1, content_types=['text'])
-def add_word_to_db(message):
-    if " " in message.text:
-        words = [word.capitalize() for word in message.text.split()]
-    else:
-        words = [message.text.capitalize()]
+def add_word_to_db(message, base_words=None):
     cid = message.chat.id
-    with bot.retrieve_data(message.from_user.id, cid) as data:
-        data['target_word'] = message.text
-        result = add_word(message.from_user.id, words)
-        bot.reply_to(message, result)
-    userStep[cid] = 0
-    create_cards(message)
-
+    if base_words is None:
+        if " " in message.text:
+            words = [word.capitalize() for word in message.text.split()]
+        else:
+            words = [message.text.capitalize()]
+        with bot.retrieve_data(message.from_user.id, cid) as data:
+            data['target_word'] = message.text
+            result = add_word(message.from_user.id, words)
+            bot.reply_to(message, result)
+        userStep[cid] = 0
+        create_cards(message)
+    else:
+        with bot.retrieve_data(message.from_user.id, cid) as data:
+            data['target_word'] = message.text
+            result = add_word(message.from_user.id, base_words)
+            bot.reply_to(message, result)
+        userStep[cid] = 0
 
 @bot.message_handler(func=lambda message: True, content_types=['text'])
 def message_reply(message):

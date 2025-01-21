@@ -57,12 +57,12 @@ def get_words_from_db(user_id):
         return words, target_word
 
 
-def delete_word_from_db(user_id, word):
+def delete_word_from_db(message):
+    print(f'word: {message.text}, user_id: {message.from_user.id}')
     with SessionLocal() as session:
-        user = session.query(User).filter_by(id=user_id).first()
-        word = session.query(Word).filter_by(lang_en=word).first()
-        user_word = session.query(UserWord).filter_by(user_id=user_id, word_id=word.id).first()
-        print(f'user: {user}, word: {word} user_word: {user_word}')
+        user = session.query(User).filter_by(id=message.from_user.id).first()
+        word = session.query(Word).filter_by(lang_ru=message.text).first()
+        user_word = session.query(UserWord).filter_by(user_id=message.from_user.id, word_id=word.id).first()
         session.delete(user_word)
         session.commit()
         return f'Слово {word.lang_ru} удалено из словаря'
