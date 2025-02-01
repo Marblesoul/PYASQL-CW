@@ -8,10 +8,23 @@ engine = sq.create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
+basic_words = {
+    'Hello': 'Привет',
+    'Goodbye': 'Пока',
+    'Morning': 'Утро',
+    'Evening': 'Вечер',
+    'Night': 'Ночь',
+    'Good': 'Хорошо',
+    'Bad': 'Плохо',
+    'Yes': 'Да',
+    'No': 'Нет',
+    'Thank you': 'Спасибо'
+}
+
 class User(Base):
     __tablename__ = "users"
 
-    id = sq.Column(sq.Integer, primary_key=True, index=True)
+    id = sq.Column(sq.BIGINT, primary_key=True, index=True)
 
     user_words = relationship("UserWord", back_populates="user")
 
@@ -24,6 +37,7 @@ class Word(Base):
     id = sq.Column(sq.Integer, primary_key=True, index=True)
     lang_ru = sq.Column(sq.String, unique=True)
     lang_en = sq.Column(sq.String, unique=True)
+    is_basic = sq.Column(sq.Boolean, default=False)
 
     user_words = relationship("UserWord", back_populates="word")
 
@@ -34,7 +48,7 @@ class UserWord(Base):
     __tablename__ = "user_words"
 
     id = sq.Column(sq.Integer, primary_key=True, index=True)
-    user_id = sq.Column(sq.Integer, sq.ForeignKey("users.id"))
+    user_id = sq.Column(sq.BIGINT, sq.ForeignKey("users.id"))
     word_id = sq.Column(sq.Integer, sq.ForeignKey("words.id"))
     user = relationship("User", back_populates="user_words")
     word = relationship("Word", back_populates="user_words")
@@ -46,3 +60,10 @@ class UserWord(Base):
 def create_db_and_tables():
     print('Creating database...')
     Base.metadata.create_all(bind=engine)
+    with SessionLocal() as session:
+        words_table = session.query(Word).all()
+        if not words_table:
+            for lang_en, lang_ru in basic_words.items():
+                word = Word(lang_en=lang_en, lang_ru=lang_ru, is_basic=True)
+                session.add(word)
+                session.commit()
